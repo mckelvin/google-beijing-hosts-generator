@@ -21,7 +21,7 @@
 203.208.36.1   appengine.google.com
 203.208.36.1   apis.google.com
 203.208.36.23   google.com
-203.208.36.1   imap.gmail.com gmail-imap.l.google.com
+#203.208.36.1   imap.gmail.com gmail-imap.l.google.com
 203.208.36.1   0.drive.google.com
 203.208.36.1   lh6.google.com
 203.208.36.1   lh5.google.com
