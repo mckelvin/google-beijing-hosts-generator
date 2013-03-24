@@ -1,3 +1,7 @@
+#
+# 所有需要解析的Google主机地址
+#
+
 groups-china.l.google.com
 khm1.google.com
 khm0.google.com

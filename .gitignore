@@ -1,4 +1,3 @@
 *.swp
 *.pyc
-db.shelve
 env

@@ -1,5 +1,8 @@
 # coding: UTF-8
 #
+# 自动解析部分Google北京hosts
+# author: mckelvin
+# 
 import os
 import sys
 import subprocess
@@ -12,12 +15,14 @@ from util import get_ssl_subject_CN
 SHELVE_FILE = 'db.shelve'
 GOOGLE_DOMAINS_FILE = 'google_domains.txt'
 K_LATEST_MAPPING_RESULT = 'latest_mapping_result'
-K_LATEST_PING_RESULT = 'latest_ping_ressult'
+K_LATEST_PING_RESULT = 'latest_ping_result'
 
 def one_ping(ip):
-    res = subprocess.Popen(['ping', '-c', '1', '-n', '-W', '1', ip],
+    ping_count = '1'
+    ping_timeout = '1'
+    res = subprocess.Popen(['ping', '-c', ping_count, '-n', '-W', ping_timeout, ip],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
-    print 'ping %s\r' % ip
+    print 'ping %s : %s' % (ip , 'active' if res == 0 else 'inactive')
     return ip, res
 
 def get_candidate_google_ips():
@@ -55,7 +60,7 @@ def resolve_host_ip_mapping():
     for each_ip in active_ips:
         each_ip = each_ip.strip()
         c_CN = get_ssl_subject_CN(each_ip)
-        print each_ip, c_CN
+        print 'find mapping: %s in %s' % (each_ip, c_CN)
         host_ips.setdefault(c_CN, []).append(each_ip)
     host_ips.pop(None)
 
@@ -64,21 +69,23 @@ def resolve_host_ip_mapping():
     s.close()
 
 # STEP 3
-def generate_hosts_file():
+def generate_hosts():
     '''通过已知host-ip隐射生成hosts条目'''
     s = shelve.open(SHELVE_FILE)
     host_ips = s[K_LATEST_MAPPING_RESULT]
+    s.close()
     hosts = []
     with open(GOOGLE_DOMAINS_FILE) as fh:
         for domain in fh:
             domain = domain.strip()
+            if domain.startswith('#') or domain == '':
+                continue
             ip = None
             for domain_pattern in host_ips.keys():
                 if domain_pattern is not None and fnmatch(domain, domain_pattern):
                     ip = host_ips[domain_pattern][0]
                     break
             hosts.append((domain, ip))
-    s.close()
     return hosts
 
 def main():
@@ -88,13 +95,17 @@ def main():
     (opts, args) = parser.parse_args()
     
     s = shelve.open(SHELVE_FILE)
-    if not s.get(K_LATEST_PING_RESULT) or opts.force:
+    latest_ping_result = s.get(K_LATEST_PING_RESULT)
+    latest_mapping_result = s.get(K_LATEST_MAPPING_RESULT)
+    s.close()
+    if not latest_ping_result or opts.force:
         find_active_ips() #step 1
-    if not s.get('resolve_host_ip_mapping') or opts.force:
+    if not latest_mapping_result or opts.force:
         resolve_host_ip_mapping() #step2
     hosts = generate_hosts() # test3
-    for i in hosts:
-        print '%s   %s' % (i[1] or '#unknowip', i[0])
+    with open('hosts','w') as fh:
+        fh.writelines(('%s   %s\n' % (i[1] or '#unknown', i[0]) for i in hosts))
+    print 'done! checkout `hosts` in current directory'
     
 if __name__ == '__main__':
     main()
