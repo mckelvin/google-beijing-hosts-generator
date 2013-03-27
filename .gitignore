@@ -1,3 +1,7 @@
 *.swp
 *.pyc
 env
+hosts
+active_google_ips.txt
+db.shelve
+postfix.patch
