@@ -9,7 +9,7 @@
 其中步骤1和步骤2的结果默认会被缓存在`db.shelve`中
 
 ## 安装依赖
-   
+    #M2Crypto模块依赖swig，先确保你的系统中已经安装了swig（终端下能执行swig命令），否则可能报错。
     pip install -r requirements.txt
 
 ## 使用
