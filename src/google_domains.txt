@@ -113,3 +113,4 @@ webcache.googleusercontent.com
 www.googlevideo.com
 gstatic.com
 maps.gstatic.com
+fonts.googleapis.com
