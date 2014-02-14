@@ -2,9 +2,7 @@
 #
 # 自动解析部分Google北京hosts
 # author: mckelvin
-# 
-import os
-import sys
+
 import subprocess
 import multiprocessing as mp
 import shelve
@@ -17,13 +15,16 @@ GOOGLE_DOMAINS_FILE = 'google_domains.txt'
 K_LATEST_MAPPING_RESULT = 'latest_mapping_result'
 K_LATEST_PING_RESULT = 'latest_ping_result'
 
+
 def one_ping(ip):
     ping_count = '1'
     ping_timeout = '1'
-    res = subprocess.Popen(['ping', '-c', ping_count, '-n', '-W', ping_timeout, ip],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
-    print 'ping %s : %s' % (ip , 'active' if res == 0 else 'inactive')
+    res = subprocess.Popen(
+        ['ping', '-c', ping_count, '-n', '-W', ping_timeout, ip],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
+    print 'ping %s : %s' % (ip, 'active' if res == 0 else 'inactive')
     return ip, res
+
 
 def get_candidate_google_ips():
     ips = []
@@ -31,6 +32,7 @@ def get_candidate_google_ips():
         for ip4 in range(1, 255):
             ips.append('203.208.%s.%s' % (ip3, ip4))
     return ips
+
 
 # STEP 1
 def find_active_ips():
@@ -43,11 +45,12 @@ def find_active_ips():
     pool = mp.Pool(20)
     res = pool.map(one_ping, ips)
     active_ips = [item[0] for item in res if len(item) == 2 and item[1] == 0]
-    s = shelve.open(SHELVE_FILE) 
+    s = shelve.open(SHELVE_FILE)
     s[K_LATEST_PING_RESULT] = active_ips
     s.close()
     with open('active_google_ips.txt', 'w') as fh:
         fh.writelines('\n'.join(active_ips))
+
 
 # STEP 2
 def resolve_host_ip_mapping():
@@ -65,8 +68,9 @@ def resolve_host_ip_mapping():
     host_ips.pop(None)
 
     s = shelve.open(SHELVE_FILE)
-    s[K_LATEST_MAPPING_RESULT] =  host_ips
+    s[K_LATEST_MAPPING_RESULT] = host_ips
     s.close()
+
 
 # STEP 3
 def generate_hosts():
@@ -82,30 +86,36 @@ def generate_hosts():
                 continue
             ip = None
             for domain_pattern in host_ips.keys():
-                if domain_pattern is not None and fnmatch(domain, domain_pattern):
+                if (domain_pattern is not None and
+                        fnmatch(domain, domain_pattern)):
                     ip = host_ips[domain_pattern][0]
                     break
             hosts.append((domain, ip))
     return hosts
 
+
 def main():
     parser = OptionParser()
-    parser.add_option('-f', '--force', help="force to find ips(step1) and resolve host-ip mapping(step2)",
-            dest="force", default=False, action='store_true')
+    parser.add_option(
+        '-f', '--force', help="force to find ips(step1) and "
+                              "resolve host-ip mapping(step2)",
+        dest="force", default=False, action='store_true')
     (opts, args) = parser.parse_args()
-    
+
     s = shelve.open(SHELVE_FILE)
     latest_ping_result = s.get(K_LATEST_PING_RESULT)
     latest_mapping_result = s.get(K_LATEST_MAPPING_RESULT)
     s.close()
     if not latest_ping_result or opts.force:
-        find_active_ips() #step 1
+        find_active_ips()  # step 1
     if not latest_mapping_result or opts.force:
-        resolve_host_ip_mapping() #step2
-    hosts = generate_hosts() # test3
-    with open('hosts','w') as fh:
-        fh.writelines(('%s   %s\n' % (i[1] or '#unknown', i[0]) for i in hosts))
+        resolve_host_ip_mapping()  # step2
+    hosts = generate_hosts()  # test3
+    with open('hosts', 'w') as fh:
+        fh.writelines(('%s   %s\n' % (i[1] or '#unknown', i[0])
+                      for i in hosts))
     print 'done! checkout `hosts` in current directory'
-    
+
+
 if __name__ == '__main__':
     main()

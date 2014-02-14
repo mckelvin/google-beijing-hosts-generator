@@ -1,10 +1,9 @@
 # coding: UTF-8
 
-import sys
-
 from M2Crypto import SSL
 
-def get_ssl_subject_CN(ip_address,ssl_port=443):
+
+def get_ssl_subject_CN(ip_address, ssl_port=443):
     ctx = SSL.Context()
     ctx.set_allow_unknown_ca(True)
     ctx.set_verify(SSL.verify_none, 1)
@@ -14,9 +13,8 @@ def get_ssl_subject_CN(ip_address,ssl_port=443):
     conn.set_socket_read_timeout(timeout)
     conn.set_socket_write_timeout(timeout)
     try:
-      conn.connect((ip_address,ssl_port))
-    except Exception, e:
-        #print 'ssl conn error:',e
+        conn.connect((ip_address, ssl_port))
+    except:
         return
 
     cert = conn.get_peer_cert()
@@ -24,10 +22,6 @@ def get_ssl_subject_CN(ip_address,ssl_port=443):
         c_CN = cert.get_subject().CN
     except AttributeError:
         c_CN = ""
-    try:
-       c_AltName = cert.get_ext('subjectAltName').get_value()
-    except AttributeError:
-        c_AltName = ""
     conn.close()
     return c_CN
 
